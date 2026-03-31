@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import Admin from '../models/Admin.js';
 import Page from '../models/Page.js';
+import seedLegalPages from './seedLegalPages.js';
 
 // Load environment variables
 dotenv.config();
@@ -746,6 +747,9 @@ const seedDatabase = async () => {
     // Seed pages
     await seedPages(admin);
 
+    // Seed legal pages (privacy policy, terms of service)
+    await seedLegalPages();
+
     console.log('\n✅ Database seeding completed successfully!');
     console.log('\n📋 Seeded Pages:');
     console.log('   - Home (8 sections)');
@@ -755,6 +759,8 @@ const seedDatabase = async () => {
     console.log('   - Careers (4 sections)');
     console.log('   - Contact (6 sections)');
     console.log('   - Global (3 sections)');
+    console.log('   - Privacy Policy');
+    console.log('   - Terms of Service');
     console.log('\n👤 Admin credentials:');
     console.log(`   Email: ${admin.email}`);
     console.log('   Password: [As set in environment variables]');

@@ -1,10 +1,42 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { body, validationResult } from 'express-validator';
 import authController from '../controllers/authController.js';
 import { protect, superAdminOnly } from '../middlewares/auth.js';
 import { validate } from '../middlewares/validate.js';
 
 const router = Router();
+
+// Rate limiters - configured for cloud hosting (Render, Heroku, etc.)
+// These use X-Forwarded-For header to get real client IP
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 50, // increased for shared IPs (offices, ISPs, proxies)
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Use real IP from proxy headers or fallback to socket IP
+    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.socket.remoteAddress;
+  },
+  message: {
+    success: false,
+    error: 'Too many login attempts, please try again later.'
+  }
+});
+
+const adminLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // generous for admin panel usage
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.socket.remoteAddress;
+  },
+  message: {
+    success: false,
+    error: 'Too many requests, please try again later.'
+  }
+});
 
 // Validation rules
 const loginValidation = [
@@ -34,14 +66,14 @@ const changePasswordValidation = [
     .withMessage('New password must be at least 8 characters')
 ];
 
-// Public routes
-router.post('/login', loginValidation, validate, authController.login);
+// Public routes (with strict rate limiting for login)
+router.post('/login', loginLimiter, loginValidation, validate, authController.login);
 
-// Protected routes
-router.get('/me', protect, authController.getMe);
-router.put('/profile', protect, updateProfileValidation, validate, authController.updateProfile);
-router.put('/password', protect, changePasswordValidation, validate, authController.changePassword);
-router.post('/logout', protect, authController.logout);
-router.get('/verify', protect, authController.verifyToken);
+// Protected routes (with generous rate limiting for admin panel)
+router.get('/me', adminLimiter, protect, authController.getMe);
+router.put('/profile', adminLimiter, protect, updateProfileValidation, validate, authController.updateProfile);
+router.put('/password', adminLimiter, protect, changePasswordValidation, validate, authController.changePassword);
+router.post('/logout', adminLimiter, protect, authController.logout);
+router.get('/verify', adminLimiter, protect, authController.verifyToken);
 
 export default router;

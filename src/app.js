@@ -97,6 +97,9 @@ dotenv.config();
 
 const app = express();
 
+// Trust proxy - required for rate limiting behind cloud hosting (Render, Heroku, etc.)
+app.set('trust proxy', 1);
+
 
 // ================= SECURITY ================= //
 
@@ -138,23 +141,19 @@ app.options('*', cors());
 // ================= RATE LIMIT ================= //
 
 const publicLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Use real IP from proxy headers or fallback to socket IP
+    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.ip || req.socket.remoteAddress;
+  },
   message: {
     success: false,
     error: 'Too many requests, please try again later.'
   }
 });
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
-  message: {
-    success: false,
-    error: 'Too many authentication attempts, please try again later.'
-  }
-});
-
 
 // ================= BODY PARSER ================= //
 
@@ -164,10 +163,12 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ================= ROUTES ================= //
 
-app.use('/api/auth', authLimiter, authRoutes);
+// Auth routes have their own rate limiters defined in authRoutes.js
+app.use('/api/auth', authRoutes);
 app.use('/api/pages', publicLimiter, pageRoutes);
-app.use('/api/media', mediaRoutes);
+app.use('/api/media', publicLimiter, mediaRoutes);
 app.use('/api/contact', publicLimiter, contactRoutes);
+
 
 
 // ================= HEALTH ================= //

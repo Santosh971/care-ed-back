@@ -101,15 +101,35 @@ export const getPage = async (req, res) => {
       return notFoundResponse(res, `Page '${pageId}' not found`);
     }
 
-    // Filter active sections
-    const activeSections = page.sections.filter(section => section.isActive);
+    // Check if page is inactive (for legal pages)
+    if (page.isActive === false) {
+      // Return minimal data indicating page is unavailable
+      return successResponse(res, {
+        pageId: page.pageId,
+        title: page.title,
+        isActive: false,
+        sections: []
+      }, 'Page is currently unavailable');
+    }
 
-    return successResponse(res, {
+    // Return ALL sections (including inactive ones) - frontend handles visibility
+    // This allows admin to toggle section visibility via isActive flag
+    const response = {
       pageId: page.pageId,
       title: page.title,
-      sections: activeSections,
+      sections: page.sections,
       metadata: page.metadata
-    }, 'Page retrieved successfully');
+    };
+
+    // Include page-level fields for legal pages
+    if (pageId === 'privacy-policy' || pageId === 'terms-of-service') {
+      response.subtitle = page.subtitle || '';
+      response.content = page.content || '';
+      response.lastUpdated = page.lastUpdated || page.metadata?.lastUpdated;
+      response.isActive = page.isActive !== false;
+    }
+
+    return successResponse(res, response, 'Page retrieved successfully');
   } catch (error) {
     console.error('Get page error:', error);
     return errorResponse(res, 'Server error', 500);
@@ -656,12 +676,101 @@ export const cleanupBlobUrls = async (req, res) => {
   }
 };
 
+// @desc    Save or update entire page (for legal pages)
+// @route   PUT /api/pages/:pageId
+// @access  Private
+export const savePage = async (req, res) => {
+  try {
+    const { pageId } = req.params;
+    const { title, subtitle, content, lastUpdated, isActive } = req.body;
+
+    console.log('[savePage] Saving page:', pageId);
+
+    let page = await Page.findOne({ pageId });
+
+    if (!page) {
+      // Create new page
+      page = await Page.create({
+        pageId,
+        title: title || pageId,
+        sections: [],
+        metadata: {
+          lastUpdated: new Date(),
+          updatedBy: req.admin._id
+        }
+      });
+    }
+
+    // For legal pages, store data at page level (not sections)
+    // Update page-level fields
+    if (title !== undefined) page.title = title;
+    if (subtitle !== undefined) page.subtitle = subtitle;
+    if (content !== undefined) page.content = content;
+    if (lastUpdated !== undefined) page.lastUpdated = lastUpdated;
+    if (isActive !== undefined) page.isActive = isActive;
+
+    // Update metadata
+    page.metadata = {
+      lastUpdated: new Date(),
+      updatedBy: req.admin._id
+    };
+
+    await page.save();
+
+    console.log('[savePage] Page saved successfully:', pageId);
+
+    return successResponse(res, page, 'Page saved successfully');
+  } catch (error) {
+    console.error('[savePage] Error:', error);
+    return errorResponse(res, error.message || 'Server error', 500);
+  }
+};
+
+// @desc    Get page by pageId (including inactive)
+// @route   GET /api/pages/:pageId/full
+// @access  Private
+export const getPageFull = async (req, res) => {
+  try {
+    const { pageId } = req.params;
+
+    const page = await Page.findOne({ pageId }).populate('metadata.updatedBy', 'name email');
+
+    if (!page) {
+      // Return empty page structure for new pages
+      return successResponse(res, {
+        pageId,
+        title: '',
+        subtitle: '',
+        content: '',
+        lastUpdated: null,
+        isActive: true
+      }, 'Page not found, returning empty structure');
+    }
+
+    return successResponse(res, {
+      pageId: page.pageId,
+      title: page.title,
+      subtitle: page.subtitle || '',
+      content: page.content || '',
+      lastUpdated: page.lastUpdated || page.metadata?.lastUpdated,
+      isActive: page.isActive !== false,
+      sections: page.sections,
+      metadata: page.metadata
+    }, 'Page retrieved successfully');
+  } catch (error) {
+    console.error('Get page full error:', error);
+    return errorResponse(res, 'Server error', 500);
+  }
+};
+
 export default {
   getPage,
   getAllPages,
   getSection,
   updateSection,
   createPage,
+  savePage,
+  getPageFull,
   deletePage,
   toggleSection,
   reorderSections,

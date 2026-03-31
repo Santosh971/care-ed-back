@@ -135,6 +135,23 @@ const pageSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  // Fields for legal pages (privacy-policy, terms-of-service)
+  subtitle: {
+    type: String,
+    default: ''
+  },
+  content: {
+    type: String,
+    default: ''
+  },
+  lastUpdated: {
+    type: Date,
+    default: null
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
   sections: [sectionSchema],
   metadata: {
     lastUpdated: {

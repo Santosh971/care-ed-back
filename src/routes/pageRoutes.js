@@ -47,8 +47,14 @@ router.get('/:pageId/sections/:sectionId', pageController.getSection);
 // Protected routes (require authentication)
 router.get('/', protect, pageController.getAllPages);
 
+// Get full page (including inactive) - for admin editing
+router.get('/:pageId/full', protect, pageController.getPageFull);
+
 // Editor+ routes
 router.post('/', protect, editorOrAbove, createPageValidation, validate, pageController.createPage);
+
+// Save entire page (for legal pages)
+router.put('/:pageId', protect, editorOrAbove, pageController.savePage);
 
 // Section update route with file upload support
 // Supports both JSON and multipart/form-data

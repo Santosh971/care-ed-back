@@ -112,6 +112,7 @@ app.use(helmet({
 
 // ✅ Add all allowed origins
 const allowedOrigins = [
+  "https://carelearning.ca",
   "http://localhost:5173",
   "https://care-ed-front.vercel.app"
 ];

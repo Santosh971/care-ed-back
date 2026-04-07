@@ -75,6 +75,42 @@ const sectionSchema = new mongoose.Schema({
   items: [{
     type: mongoose.Schema.Types.Mixed
   }],
+  // Requirements array for generalRequirements section
+  requirements: [{
+    type: String
+  }],
+  // Highlights array for trainingCard section
+  highlights: [{
+    type: String
+  }],
+  // Application format for howToApply section
+  applicationFormat: [{
+    type: String
+  }],
+  // Section image for benefits section
+  sectionImage: {
+    url: String,
+    alt: String,
+    publicId: String
+  },
+  // CTA fields for trainingCard
+  ctaText: {
+    type: String,
+    default: ''
+  },
+  ctaLink: {
+    type: String,
+    default: ''
+  },
+  // Contact fields for howToApply
+  email: {
+    type: String,
+    default: ''
+  },
+  phone: {
+    type: String,
+    default: ''
+  },
   // Location section fields
   areas: [{
     type: mongoose.Schema.Types.Mixed
@@ -122,7 +158,7 @@ const sectionSchema = new mongoose.Schema({
     type: Number,
     default: 0
   }
-}, { _id: false });
+}, { _id: false, strict: false });
 
 const pageSchema = new mongoose.Schema({
   pageId: {

@@ -235,6 +235,20 @@ export const updateSection = async (req, res) => {
       if (updateData.badge && typeof updateData.badge === 'string') {
         updateData.badge = JSON.parse(updateData.badge);
       }
+      // Parse new array fields for careers page
+      if (updateData.requirements && typeof updateData.requirements === 'string') {
+        updateData.requirements = JSON.parse(updateData.requirements);
+      }
+      if (updateData.highlights && typeof updateData.highlights === 'string') {
+        updateData.highlights = JSON.parse(updateData.highlights);
+      }
+      if (updateData.applicationFormat && typeof updateData.applicationFormat === 'string') {
+        updateData.applicationFormat = JSON.parse(updateData.applicationFormat);
+      }
+      // Parse sectionImage for benefits section
+      if (updateData.sectionImage && typeof updateData.sectionImage === 'string') {
+        updateData.sectionImage = JSON.parse(updateData.sectionImage);
+      }
     } catch (parseError) {
       console.warn('[updateSection] Failed to parse JSON fields:', parseError);
     }

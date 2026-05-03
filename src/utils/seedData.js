@@ -58,7 +58,7 @@ const homePageSections = [
   {
     sectionId: 'hero',
     title: 'Build Your Healthcare Career',
-    subtitle: 'Professional Healthcare Training Since 2007',
+    subtitle: 'Professional Healthcare Training Since 1987',
     description: 'Quality education and professional training programs for aspiring healthcare professionals. Get certified and start making a difference.',
     images: [],
     buttons: [
@@ -118,7 +118,7 @@ const homePageSections = [
   {
     sectionId: 'about',
     title: 'Professional Healthcare Education & Training',
-    description: 'Care-Ed Learning Center has been providing quality healthcare education and professional training since 2007. Our programs are designed to prepare students for rewarding careers in healthcare.',
+    description: 'Care-Ed Learning Center has been providing quality healthcare education and professional training since 1987. Our programs are designed to prepare students for rewarding careers in healthcare.',
     content: 'We offer approved training programs with hands-on practicums, classroom lectures, and professional mentoring. Our goal is to provide research-based knowledge and skill-building opportunities.',
     features: [
       'Licensed RN/LPN Instructors',
@@ -198,7 +198,7 @@ const aboutPageSections = [
     sectionId: 'hero',
     title: 'About Care-Ed',
     subtitle: 'Excellence in Healthcare Education Since 1987',
-    description: 'Professional healthcare education since 2007. We provide quality training programs that prepare students for rewarding careers in healthcare.',
+    description: 'Professional healthcare education since 1987. We provide quality training programs that prepare students for rewarding careers in healthcare.',
     images: [],
     buttons: [
       { text: 'Contact Us', link: '/contact', style: 'primary' },
@@ -213,7 +213,7 @@ const aboutPageSections = [
     title: 'Our Mission',
     description: '"To provide customized, client-sensitive support services and education programs resulting in improved standards, attitudes and services."',
     content: {
-      vision: 'Care-Ed Learning Center, established in 2007, is the educational division of Care-ed Inc. We offer approved training programs including Personal Support Worker (PSW), First Aid & CPR, Foot Care Management, and specialized workshops.'
+      vision: 'Care-Ed Learning Center, established in 1987, is the educational division of Care-ed Inc. We offer approved training programs including Personal Support Worker (PSW), First Aid & CPR, Foot Care Management, and specialized workshops.'
     },
     stats: [
       { number: 15, suffix: '+', label: 'Years Teaching' },
@@ -246,7 +246,7 @@ const aboutPageSections = [
       { year: '1987', title: 'Company Founded', description: 'Care-ed was established by Jean E. Porter Mowatt and Sharon A. O\'Brien.' },
       { year: '1993', title: 'Educational Endowment', description: 'Established an Educational Endowment Fund to support caregiver education.' },
       { year: '2001', title: 'Learn While You Earn', description: 'Launched Employee in Action – Learn While You Earn Program.' },
-      { year: '2007', title: 'Care-Ed Learning Center', description: 'Founded Care-Ed Learning Center for professional healthcare training.' },
+      { year: '1987', title: 'Care-Ed Learning Center', description: 'Founded Care-Ed Learning Center for professional healthcare training.' },
       { year: 'Today', title: 'Continuing Excellence', description: '15+ years of quality healthcare education and professional training programs.' }
     ],
     isActive: true,
@@ -384,10 +384,10 @@ const careEdPageSections = [
   {
     sectionId: 'hero',
     title: 'Care-Ed Learning Center',
-    subtitle: 'Professional Training Since 2007',
+    subtitle: 'Professional Training Since 1987',
     description: 'Professional healthcare education and training programs designed to prepare students for successful careers.',
     badge: {
-      text: 'Professional Training Since 2007',
+      text: 'Professional Training Since 1987',
       icon: 'GraduationCap'
     },
     images: [],
@@ -647,7 +647,7 @@ const globalSections = [
         phone: '(506) 634-8906',
         email: 'train@seniorwatch.com'
       },
-      tagline: 'Professional Healthcare Training Since 2007'
+      tagline: 'Professional Healthcare Training Since 1987'
     },
     isActive: true,
     order: 1
@@ -659,7 +659,7 @@ const globalSections = [
     content: {
       companyInfo: {
         name: 'Care-Ed Learning Center',
-        description: 'Professional healthcare education and training since 2007. Building careers through quality education.',
+        description: 'Professional healthcare education and training since 1987. Building careers through quality education.',
         address: '100 Prince Edward St, Saint John, NB'
       },
       quickLinks: [

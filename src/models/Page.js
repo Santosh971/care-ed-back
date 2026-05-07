@@ -188,6 +188,41 @@ const pageSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  // New fields for International Students module
+  slug: {
+    type: String,
+    unique: true,
+    sparse: true,  // Allow null for existing pages
+    index: true
+  },
+  parentCategory: {
+    type: String,
+    default: null,
+    index: true
+  },
+  order: {
+    type: Number,
+    default: 0
+  },
+  seo: {
+    metaTitle: {
+      type: String,
+      default: ''
+    },
+    metaDescription: {
+      type: String,
+      default: ''
+    },
+    ogImage: {
+      url: String,
+      publicId: String,
+      alt: String
+    },
+    canonicalUrl: {
+      type: String,
+      default: ''
+    }
+  },
   sections: [sectionSchema],
   metadata: {
     lastUpdated: {
@@ -230,6 +265,23 @@ pageSchema.methods.updateSection = function(sectionId, data) {
 pageSchema.statics.findByPageId = function(pageId) {
   return this.findOne({ pageId });
 };
+
+// Static method to find page by slug
+pageSchema.statics.findBySlug = function(slug) {
+  return this.findOne({ slug, isPublished: { $ne: false } });
+};
+
+// Static method to find child pages by parentCategory
+pageSchema.statics.findChildren = function(parentCategory) {
+  return this.find({
+    parentCategory,
+    isPublished: { $ne: false },
+    isActive: { $ne: false }
+  }).sort({ order: 1 });
+};
+
+// Compound index for efficient child page queries
+pageSchema.index({ parentCategory: 1, order: 1 });
 
 const Page = mongoose.model('Page', pageSchema);
 

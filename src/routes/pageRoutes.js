@@ -40,18 +40,73 @@ const reorderValidation = [
     .withMessage('sectionOrder must be an array')
 ];
 
-// Public routes
+// Validation for creating child page
+const createChildPageValidation = [
+  body('pageId')
+    .trim()
+    .notEmpty()
+    .withMessage('pageId is required')
+    .matches(/^[a-z0-9-]+$/)
+    .withMessage('pageId must be lowercase with hyphens only'),
+  body('title')
+    .trim()
+    .notEmpty()
+    .withMessage('Title is required')
+    .isLength({ max: 100 })
+    .withMessage('Title must be less than 100 characters'),
+  body('slug')
+    .trim()
+    .notEmpty()
+    .withMessage('Slug is required')
+    .matches(/^[a-z0-9-]+$/)
+    .withMessage('Slug must be lowercase with hyphens only'),
+  body('parentCategory')
+    .trim()
+    .notEmpty()
+    .withMessage('parentCategory is required')
+];
+
+// ===========================================
+// PUBLIC ROUTES
+// ===========================================
+
+// Get child pages by parent category (must be before /:pageId)
+router.get('/children/:parentCategory', pageController.getChildPages);
+
+// Get page by slug (must be before /:pageId)
+router.get('/slug/:slug', pageController.getPageBySlug);
+
+// Get page by pageId
 router.get('/:pageId', pageController.getPage);
+
+// Get section by sectionId
 router.get('/:pageId/sections/:sectionId', pageController.getSection);
 
-// Protected routes (require authentication)
+// ===========================================
+// PROTECTED ROUTES (require authentication)
+// ===========================================
+
+// Get all pages (admin)
 router.get('/', protect, pageController.getAllPages);
+
+// Get pages with filtering (admin)
+router.get('/admin/list', protect, pageController.getAdminPages);
 
 // Get full page (including inactive) - for admin editing
 router.get('/:pageId/full', protect, pageController.getPageFull);
 
-// Editor+ routes
+// ===========================================
+// EDITOR+ ROUTES
+// ===========================================
+
+// Create new page
 router.post('/', protect, editorOrAbove, createPageValidation, validate, pageController.createPage);
+
+// Create child page (for international students module)
+router.post('/child', protect, editorOrAbove, createChildPageValidation, validate, pageController.createChildPage);
+
+// Update child page
+router.put('/child/:pageId', protect, editorOrAbove, pageController.updateChildPage);
 
 // Save entire page (for legal pages)
 router.put('/:pageId', protect, editorOrAbove, pageController.savePage);
@@ -91,7 +146,11 @@ router.patch('/:pageId/sections/:sectionId/toggle', protect, editorOrAbove, page
 router.put('/:pageId/reorder', protect, editorOrAbove, reorderValidation, validate, pageController.reorderSections);
 router.get('/:pageId/history', protect, pageController.getPageHistory);
 
-// Super admin routes
+// ===========================================
+// SUPER ADMIN ROUTES
+// ===========================================
+
+// Delete page
 router.delete('/:pageId', protect, superAdminOnly, pageController.deletePage);
 
 // Utility routes

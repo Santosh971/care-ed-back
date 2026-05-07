@@ -777,6 +777,215 @@ export const getPageFull = async (req, res) => {
   }
 };
 
+// @desc    Get child pages by parent category
+// @route   GET /api/pages/children/:parentCategory
+// @access  Public
+export const getChildPages = async (req, res) => {
+  try {
+    const { parentCategory } = req.params;
+
+    const pages = await Page.find({
+      parentCategory,
+      isActive: { $ne: false }
+    })
+      .select('pageId title slug parentCategory order seo')
+      .sort({ order: 1 });
+
+    // Include isActive filter for isPublished as well
+    const publishedPages = pages.filter(page => page.isActive !== false);
+
+    return successResponse(res, publishedPages, 'Child pages retrieved successfully');
+  } catch (error) {
+    console.error('Get child pages error:', error);
+    return errorResponse(res, 'Server error', 500);
+  }
+};
+
+// @desc    Get page by slug
+// @route   GET /api/pages/slug/:slug
+// @access  Public
+export const getPageBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const page = await Page.findOne({
+      slug,
+      isActive: { $ne: false }
+    }).populate('metadata.updatedBy', 'name email');
+
+    if (!page) {
+      return notFoundResponse(res, `Page with slug '${slug}' not found`);
+    }
+
+    // Build response
+    const response = {
+      pageId: page.pageId,
+      title: page.title,
+      slug: page.slug,
+      parentCategory: page.parentCategory,
+      order: page.order,
+      seo: page.seo,
+      sections: page.sections.filter(s => s.isActive !== false),
+      metadata: page.metadata
+    };
+
+    return successResponse(res, response, 'Page retrieved successfully');
+  } catch (error) {
+    console.error('Get page by slug error:', error);
+    return errorResponse(res, 'Server error', 500);
+  }
+};
+
+// @desc    Create child page
+// @route   POST /api/pages/child
+// @access  Private (Editor+)
+export const createChildPage = async (req, res) => {
+  try {
+    const { pageId, title, slug, parentCategory, order = 0, seo, sections = [] } = req.body;
+
+    if (!pageId || !title || !slug || !parentCategory) {
+      return errorResponse(res, 'pageId, title, slug, and parentCategory are required', 400);
+    }
+
+    // Check if pageId already exists
+    const existingByPageId = await Page.findOne({ pageId });
+    if (existingByPageId) {
+      return errorResponse(res, `Page with pageId '${pageId}' already exists`, 400);
+    }
+
+    // Check if slug already exists
+    const existingBySlug = await Page.findOne({ slug });
+    if (existingBySlug) {
+      return errorResponse(res, `Page with slug '${slug}' already exists`, 400);
+    }
+
+    // Verify parent category exists (if not the landing page itself)
+    if (parentCategory !== 'international-students') {
+      const parentExists = await Page.findOne({ pageId: parentCategory });
+      if (!parentExists) {
+        return errorResponse(res, `Parent category '${parentCategory}' does not exist`, 400);
+      }
+    }
+
+    // Get the highest order for this parent category
+    if (!order) {
+      const siblings = await Page.find({ parentCategory }).sort({ order: -1 }).limit(1);
+      const newOrder = siblings.length > 0 ? (siblings[0].order || 0) + 1 : 1;
+      req.body.order = newOrder;
+    }
+
+    const page = await Page.create({
+      pageId,
+      title,
+      slug,
+      parentCategory,
+      order: req.body.order || 0,
+      seo: seo || {
+        metaTitle: '',
+        metaDescription: '',
+        ogImage: null,
+        canonicalUrl: ''
+      },
+      sections,
+      metadata: {
+        lastUpdated: new Date(),
+        updatedBy: req.admin._id
+      }
+    });
+
+    return successResponse(res, page, 'Child page created successfully', 201);
+  } catch (error) {
+    console.error('Create child page error:', error);
+    return errorResponse(res, 'Server error', 500);
+  }
+};
+
+// @desc    Update child page (including SEO and other new fields)
+// @route   PUT /api/pages/child/:pageId
+// @access  Private (Editor+)
+export const updateChildPage = async (req, res) => {
+  try {
+    const { pageId } = req.params;
+    const { title, slug, parentCategory, order, seo, isPublished, sections } = req.body;
+
+    const page = await Page.findOne({ pageId });
+
+    if (!page) {
+      return notFoundResponse(res, `Page '${pageId}' not found`);
+    }
+
+    // Check for slug uniqueness if updating slug
+    if (slug && slug !== page.slug) {
+      const existingSlug = await Page.findOne({ slug, _id: { $ne: page._id } });
+      if (existingSlug) {
+        return errorResponse(res, `Slug '${slug}' already exists`, 400);
+      }
+      page.slug = slug;
+    }
+
+    // Update fields
+    if (title !== undefined) page.title = title;
+    if (parentCategory !== undefined) page.parentCategory = parentCategory;
+    if (order !== undefined) page.order = order;
+    if (seo !== undefined) page.seo = seo;
+    if (isPublished !== undefined) page.isActive = isPublished;
+    if (sections !== undefined) page.sections = sections;
+
+    page.metadata = {
+      lastUpdated: new Date(),
+      updatedBy: req.admin._id
+    };
+
+    await page.save();
+
+    return successResponse(res, page, 'Child page updated successfully');
+  } catch (error) {
+    console.error('Update child page error:', error);
+    return errorResponse(res, 'Server error', 500);
+  }
+};
+
+// @desc    Get all pages with filtering and pagination (for admin panel)
+// @route   GET /api/pages/admin
+// @access  Private
+export const getAdminPages = async (req, res) => {
+  try {
+    const { parentCategory, isPublished, page = 1, limit = 50 } = req.query;
+
+    const filter = {};
+
+    if (parentCategory) {
+      filter.parentCategory = parentCategory;
+    }
+
+    if (isPublished !== undefined) {
+      filter.isActive = isPublished === 'true';
+    }
+
+    const pages = await Page.find(filter)
+      .select('pageId title slug parentCategory order seo isActive metadata.lastUpdated')
+      .populate('metadata.updatedBy', 'name email')
+      .sort({ parentCategory: 1, order: 1 })
+      .skip((parseInt(page) - 1) * parseInt(limit))
+      .limit(parseInt(limit));
+
+    const total = await Page.countDocuments(filter);
+
+    return successResponse(res, {
+      pages,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit)),
+        totalItems: total,
+        itemsPerPage: parseInt(limit)
+      }
+    }, 'Pages retrieved successfully');
+  } catch (error) {
+    console.error('Get admin pages error:', error);
+    return errorResponse(res, 'Server error', 500);
+  }
+};
+
 export default {
   getPage,
   getAllPages,
@@ -789,5 +998,10 @@ export default {
   toggleSection,
   reorderSections,
   getPageHistory,
-  cleanupBlobUrls
+  cleanupBlobUrls,
+  getChildPages,
+  getPageBySlug,
+  createChildPage,
+  updateChildPage,
+  getAdminPages
 };
